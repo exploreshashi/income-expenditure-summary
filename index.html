@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Update the page title to reflect the housing society name. -->
+    <title>Income‑Expenditure Summary : Balaji Metro Jazz</title>
+    <style>
+      /* Basic page styling */
+      body {
+        /* Use a modern sans-serif font for a sleek look */
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: #eef4fa;
+        color: #333;
+      }
+
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 2rem;
+        color: #2a416f;
+        font-weight: 700;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .inputs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 15px;
+        align-items: center;
+      }
+
+      .inputs label {
+        font-weight: bold;
+      }
+
+      .inputs input[type="file"] {
+        flex: 1 1 auto;
+      }
+
+      .inputs input[type="password"] {
+        flex: 0 0 200px;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      .inputs button {
+        padding: 8px 16px;
+        background: #0069d9;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background 0.2s ease;
+      }
+
+      .inputs button:hover {
+        background: #004b9a;
+      }
+
+      #message {
+        margin-top: 10px;
+        color: #d00;
+        font-style: italic;
+      }
+
+      /*
+       * Table containers. We differentiate between horizontal (for credit
+       * and summary tables) and vertical (for the vendor table). The vendor
+       * table may be extremely long, so we cap its height and allow
+       * vertical scrolling. All tables remain horizontally scrollable on
+       * smaller screens if necessary.
+       */
+      .table-container {
+        max-width: 100%;
+        overflow-x: auto;
+        margin-top: 20px;
+        border: 1px solid #e0e6ef;
+        border-radius: 6px;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+      .vendor-table-container {
+        max-width: 100%;
+        max-height: 500px;
+        overflow-y: auto;
+        overflow-x: auto;
+        margin-top: 20px;
+        border: 1px solid #e0e6ef;
+        border-radius: 6px;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+      }
+
+      table {
+        /* Allow table to grow with its content. Setting width to max-content
+           ensures that the table expands horizontally based on the number
+           of vendor columns. Combined with the .table-container overflow,
+           this enables horizontal scrolling when there are many vendors. */
+        width: max-content;
+        border-collapse: separate;
+        border-spacing: 0;
+        min-width: 600px;
+        font-size: 0.85rem;
+      }
+
+      th,
+      td {
+        padding: 10px 14px;
+        border-bottom: 1px solid #f0f3f9;
+        text-align: right;
+        white-space: nowrap;
+      }
+
+      th {
+        position: sticky;
+        top: 0;
+        background: #2a416f;
+        color: #ffffff;
+        font-weight: 700;
+        text-align: center;
+        z-index: 1;
+        letter-spacing: 0.5px;
+      }
+
+      td:first-child,
+      th:first-child {
+        text-align: left;
+        background: #f7f9fb;
+        font-weight: 600;
+        /* Allow long vendor names to wrap onto multiple lines and limit to two lines */
+        white-space: normal;
+        word-break: break-word;
+        max-width: 220px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      tfoot td {
+        font-weight: bold;
+        background: #e7edf6;
+      }
+
+      .loading {
+        color: #555;
+        font-style: italic;
+        margin-top: 10px;
+      }
+
+      /*
+       * Colour schemes for different tables. Assign distinct header colours
+       * and subtle alternating row backgrounds to differentiate debit,
+       * credit and summary tables. Ensure text remains readable.
+       */
+      table.debit-table th {
+        background: #34495e;
+        color: #ffffff;
+      }
+      table.credit-table th {
+        background: #16a085;
+        color: #ffffff;
+      }
+      table.sum-table th {
+        background: #8e44ad;
+        color: #ffffff;
+      }
+      table.debit-table tbody tr:nth-child(even) {
+        background: #f5f8fb;
+      }
+      table.credit-table tbody tr:nth-child(even) {
+        background: #f4fbf6;
+      }
+      table.sum-table tbody tr:nth-child(even) {
+        background: #f9f5fb;
+      }
+      /* Emphasise first column across tables */
+      table.debit-table td:first-child,
+      table.credit-table td:first-child,
+      table.sum-table td:first-child {
+        background: #f7f9fb;
+        font-weight: bold;
+        color: #333;
+      }
+      /* First header cell should use a slightly coloured background and dark text for readability */
+      table.debit-table th:first-child,
+      table.credit-table th:first-child,
+      table.sum-table th:first-child {
+        background: #e7edf6;
+        font-weight: bold;
+        color: #2a416f;
+      }
+
+      /* Sticky first column for vendor table: keep vendor names visible when scrolling horizontally */
+      .vendor-table-container table.debit-table th:first-child,
+      .vendor-table-container table.debit-table td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 3;
+      }
+
+      /* Sticky bottom row (totals) for vendor table */
+      .vendor-table-container table.debit-table tfoot tr td,
+      .vendor-table-container table.debit-table tfoot tr th {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        background: #f7f9fb;
+        border-top: 2px solid #e0e6ef;
+      }
+
+      /* Styling for the chart container and canvas */
+      .chart-container {
+        margin-top: 20px;
+        padding: 10px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        overflow-x: auto;
+      }
+      .chart-container canvas {
+        max-width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Income‑Expenditure Summary : Balaji Metro Jazz</h1>
+      <div class="inputs">
+        <label for="file-input">Bank Statements (PDF):</label>
+        <input type="file" id="file-input" accept="application/pdf" multiple />
+        <label for="password-input">PDF Password:</label>
+        <input type="password" id="password-input" placeholder="Enter password" />
+        <button id="process-btn">Process</button>
+        <!-- Button to view historical data stored on the site -->
+        <button id="historical-btn" title="Process statements stored in the 'statements' folder of this site">View Historical Data</button>
+      </div>
+      <div id="message"></div>
+      <div id="results"></div>
+    </div>
+
+    <!-- Include PDF.js from a CDN. Adjust version as necessary. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js"></script>
+    <!-- SheetJS library for exporting to Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Chart.js library for rendering charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script>
+      // Include the XLSX library for exporting tables to Excel. This
+      // lightweight library (SheetJS) allows us to build a workbook in the
+      // browser and trigger a download. The script tag is injected via
+      // HTML below; however we also declare it here for reference in case
+      // editors search for usage.
+      // Global balances to be set when processing statements. These values
+      // override the balances computed from individual transaction rows and
+      // ensure that the opening and closing balances reflect the figures
+      // reported in the statements. They will be populated in processFiles().
+      let globalOpeningBalance = null;
+      let globalClosingBalance = null;
+      let globalEarliestDate = null;
+      let globalLatestDate = null;
+
+      // Mapping from month (YYYY-MM) to opening and closing balances as
+      // reported in the statements. Each entry has the structure
+      // { openingBalance, openingDate, closingBalance, closingDate } and is
+      // populated in processFiles(). This allows monthly opening/closing
+      // values to be derived from statement headers instead of transaction
+      // rows.
+      let globalMonthBalances = {};
+
+      // Store the most recently computed summary so that it can be exported
+      // via the download button. This will be assigned in renderResults().
+      let currentSummary = null;
+      // Vendor mapping loaded at build time. This object maps uppercase substrings
+      // of vendor names found in bank statements to their canonical names. It is
+      // generated from your vendor_names.xlsx but excludes "Manohar Sutar". See
+      // vendor_mapping.json for details.
+      const vendorMapping = {
+  "AADESH SCHOOL FURNITUR": "Aadesh School Furnitur",
+  "AADESH SCHOOL FURNITURE": "Aadesh School Furnitur",
+  "AAROHI ENTERPRISES": "Aarohi Enterprises",
+  "ABHIJJET ABAJI RAUT": "Abhijjet Abaji Raut",
+  "AQUA LABORATORIES INDI": "Aqua Laboratories Indi",
+  "ASHAOK HAWALDAR": "Ashaok Hawaldar",
+  "ASHWINI WATER SUPPLIERS ASHWINI WATER SUPPLIER": "Ashwini Water Suppliers Ashwini Water Supplier",
+  "ASHWINI WATER SUPPLIERS ASHWINI WATER SUPPLIER BANK MAHARASHTRA": "Ashwini Water Suppliers Ashwini Water Supplier",
+  "BALAJI METROJAZZ SAHAKARI GRUHRACHANA SA CDR": "Balaji Metrojazz Sahakari Gruhrachana Sa Cdr",
+  "BALAJI METROJAZZ SAHAKARI GRUHRACHANA SA NEW CDR": "Balaji Metrojazz Sahakari Gruhrachana Sa Cdr",
+  "BHAKTI MANAGEMENT SERV": "Bhakti Management Serv",
+  "BHAKTI MANAGEMENT SERVIC": "Bhakti Management Serv",
+  "BHAVESH VINOD VYAS": "Bhavesh Vinod Vyas",
+  "BLUEWHELPOOLS": "Bluewhelpools",
+  "BLUEWHEL POOLS, BLUE BELLS": "Bluewhelpools",
+  "CHEQUE RETURNED": "Cheque Returned",
+  "CHETAN ELECTRICAL": "Chetan Electrical",
+  "CHETAN ELECTRICAL AND": "Chetan Electrical",
+  "COMPLETE WATER SOLUTION": "Complete Water Solution",
+  "COMPLETE WATER SOLUTIO, COMPLETE WATER SOLUTION A": "Complete Water Solution",
+  // Ensure that "COMPLETE WATER SOLUTION A" on its own maps correctly. Without
+  // this explicit key, the cleaned vendor string could match only "A" when
+  // reference numbers are removed. By adding this key we guarantee that any
+  // description containing the full phrase will be consolidated with
+  // "Complete Water Solution".
+  "COMPLETE WATER SOLUTION A": "Complete Water Solution",
+  "D KUMBHAR": "D Kumbhar",
+  "DNYANESHWAR BABAN KUMBHA": "D Kumbhar",
+  "DNYANESHWAR KUMBHAR": "D Kumbhar",
+  "DEEPAK HINDURAO JADHAV": "Deepak Hindurao Jadhav",
+  "DIGITAL SYSTEMS": "Digital Systems",
+  "GLOBAL ELECTRICALS": "Global Electricals",
+  "GREEN INFINITY VENTURES": "Green Infinity Ventures",
+  "GRISH KUMAR": "Grish Kumar",
+  "GST": "Gst",
+  "HARIOM MEDICAL AND GEN": "Hariom Medical And Gen",
+  "HERON FUEL": "Heron Fuel",
+  "KONE ELEVATOR INDIA PV": "Kone Elevator India Pv",
+  "MAFATLAL KASABE": "Mafatlal Kasabe",
+  "M KASBE": "Mafatlal Kasabe",
+  "MAYUR TRADING COMPANY": "Mayur Trading Company",
+  "MEDOC HEALTHCARE": "Medoc Healthcare",
+  "MONTHLY SMS CHA": "Monthly Sms Cha",
+  "MR. MANGESH MANOHAR MORE MR. MANGESH MANOHAR MORE BANK MAHARASHTRA": "Mr. Mangesh Manohar More Mr. Mangesh Manohar More Bank Maharashtra",
+  "MSEDCL": "Msedcl",
+  "ADDL EXECUTIVE ENGINEER MSEDCL AUNDH SUB MSEDCL BANK MAHARASHTRA, ADDL EXECUTIVE ENGINEER MSEDCL AUNDH SUB TRANSFER, ADDL EXECUTIVE ENGINEER MSEDCL AUNDH SUB TRANSFER BANK MAHARASHTRA, ADDL EXECUTIVE ENGINEER MSEDCL AUNDH SUB ADDL EXECUTIVE ENGINEER MSEDCL AUNDH SUB DIVISION BANK MAHARASHTR, MAHARASHTRA STATE ELECTRI DIST COMPANY MAHARASHTRA STATE ELECTRI DIST COMPANY BANK MAHARASHTRA,MAHARASHTRA STATE ELECTRICITY DISTRIBUTI MAHARASHTRA STATE ELECTRICITY DISTRIBUTION CO LIMI,MAHARASHTRA STATE ELECTRICITY DISTRIBUTI MSEDCL BANK MAHARASHTRA": "Msedcl",
+  "NAIK WATERPROOFING CENT": "Naik Waterproofing Cent",
+  "NAKSHATRA ENTERPRISES": "Nakshatra Enterprises",
+  "NIKITA KISHOR DESHMUKH": "Nikita Kishor Deshmukh",
+  "NILKANTH BANSODE": "Nilkanth Bansode",
+  "PARVIOM TECHNOLOGIES": "Parviom Technologies",
+  "PARVIOM TECHNOLOGIES P": "Parviom Technologies",
+  "PRAKASH HANUMANT CHORAG": "Prakash Hanumant Chorag",
+  "PRATIK KAD": "Pratik Kad",
+  "PRAVIN PATIL AND ASSOC": "Pravin Patil And Assoc",
+  "PRAVIN PATIL": "Pravin Patil And Assoc",
+  "PRITAM FIRE SALES AND S": "Pritam Fire Sales And S",
+  "PROLIFE FITNESS SOLUTI": "Prolife Fitness Soluti",
+  "PUNERI MATHIWALA": "Puneri Mathiwala",
+  "PUNERI MATHIWALE": "Puneri Mathiwala",
+  "RAHUL BALASAHEB DAKHE": "Rahul Balasaheb Dakhe",
+  "RAMACHANDRA ROUT": "Ramachandra Rout",
+  "RAMESH MOHANTY": "Ramesh Mohanty",
+  "RANJU ELECTRICALS ENT": "Ranju Electricals Ent",
+  "RANJU ELECTRICALS ENTE": "Ranju Electricals Ent",
+  "RATHOD SHIVA NARAYAN": "Rathod Shiva Narayan",
+  "RISHIKESH PADLE": "Rishikesh Padle",
+  "RK SALES AND SERVICES": "Rk Sales And Services",
+  "ROHIT": "Rohit",
+  "SASHIKANTA DAS": "Sashikanta Das",
+  "SAURWATT PRIVATE LIMITED": "Saurwatt Private Limited",
+  "SBI GENERAL INSURANCE C": "Sbi General Insurance C",
+  "SECURE SOLUTIONS": "Secure Solutions",
+  "SHARP VISION FACILITY": "Sharp Vision Facility",
+  "SHET GUJAR AND COMPANY": "Shet Gujar And Company",
+  "SHREE VIGHNAHARTA ENGI": "Shree Vighnaharta Engi",
+  "SHREE VIGHNAHARTA ENGIN": "Shree Vighnaharta Engi",
+  "SHREE VIGHNAHARTA ENGINEE": "Shree Vighnaharta Engi",
+  "SHRI GAJANAN BATTERY A": "Shri Gajanan Battery A",
+  "SHRIKRISHNA ENTERPRISES SHRIKRISHNA ENTERPRISES BANK": "Shrikrishna Enterprises Shrikrishna Enterprises Bank",
+  "SMARTECH SAFETY SOLUTION": "Smartech Safety Solution",
+  "SMARTECH SAFETY SOLUTI": "Smartech Safety Solution",
+  "SOCIETY PRO CONSULTANC": "Society Pro Consultanc",
+  "SOHAM FURNITURE TRADERS": "Soham Furniture Traders",
+  "SOLANGETECH GREEN ENERGY": "Solangetech Green Energy",
+  "SOLANGETECH GREEN ENERG": "Solangetech Green Energy",
+  "SSK EVENT": "Ssk Event",
+  "SWAMINISHTHA ASSOCIATE": "Swaminishtha Associate",
+  "SWAMINISHTHA ASSOCIATES": "Swaminishtha Associate",
+  "SWASTIK TRADERS": "Swastik Traders",
+  "TRTODD": "Trtodd",
+  "TUSHAR M PATHARE": "Tushar M Pathare",
+  "UNDATED W": "Undated W",
+  "VISHAL SHAHAJI WAGHMAR": "Vishal Shahaji Waghmar",
+  "VIVISH TECHNOLOGIES PRIVA": "Vivish Technologies Priva",
+  "WATERAPP TECHNOLOGIES": "Waterapp Technologies",
+  "WATERAPP TECHNOLOGIES P": "Waterapp Technologies"
+};
+
+      // PDF.js worker configuration. Use the same CDN base path as pdf.min.js
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js";
+
+      const fileInput = document.getElementById("file-input");
+      const passwordInput = document.getElementById("password-input");
+      const processBtn = document.getElementById("process-btn");
+      const historicalBtn = document.getElementById("historical-btn");
+      const resultsContainer = document.getElementById("results");
+      const messageEl = document.getElementById("message");
+
+      // Handler for the Process button
+      processBtn.addEventListener("click", async () => {
+        const files = Array.from(fileInput.files || []);
+        const password = passwordInput.value;
+        messageEl.textContent = "";
+        resultsContainer.innerHTML = "";
+
+        if (!files.length) {
+          messageEl.textContent = "Please select one or more PDF statements.";
+          return;
+        }
+        if (!password) {
+          messageEl.textContent = "Please enter the PDF password.";
+          return;
+        }
+        try {
+          processBtn.disabled = true;
+          // Reset global balances before processing a new batch
+          globalOpeningBalance = null;
+          globalClosingBalance = null;
+          globalEarliestDate = null;
+          globalLatestDate = null;
+          messageEl.textContent = "Processing statements...";
+          const transactions = await processFiles(files, password);
+          if (!transactions.length) {
+            messageEl.textContent =
+              "No transactions could be extracted. Please check your PDFs.";
+            processBtn.disabled = false;
+            return;
+          }
+          // Sort transactions by date for consistency
+          transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+          // Compute summaries
+          const summary = computeSummaries(transactions);
+          // Render tables
+          renderResults(summary);
+          messageEl.textContent = "";
+        } catch (err) {
+          console.error(err);
+          messageEl.textContent =
+            "An error occurred while processing the statements. Please check the console for details.";
+        } finally {
+          processBtn.disabled = false;
+        }
+      });
+
+      // Handler for the "View Historical Data" button. This function
+      // retrieves PDF statements stored in the `statements` directory of
+      // the current site repository via the GitHub API (to list files) and
+      // then fetches those PDFs and processes them with the provided
+      // password. It shares the same summarisation logic as uploading
+      // user files. If no password is entered, the user is prompted.
+      historicalBtn.addEventListener("click", async () => {
+        const password = passwordInput.value.trim();
+        // Clear previous results and messages
+        messageEl.textContent = "";
+        resultsContainer.innerHTML = "";
+        if (!password) {
+          messageEl.textContent = "Please enter the PDF password.";
+          return;
+        }
+        try {
+          historicalBtn.disabled = true;
+          processBtn.disabled = true;
+          messageEl.textContent = "Processing historical statements...";
+          await processHistorical(password);
+          messageEl.textContent = "";
+        } catch (err) {
+          console.error(err);
+          messageEl.textContent =
+            "An error occurred while processing historical statements.";
+        } finally {
+          historicalBtn.disabled = false;
+          processBtn.disabled = false;
+        }
+      });
+
+      /**
+       * Process multiple PDF files and extract transaction objects.
+       * @param {File[]} files - Array of File objects selected by the user.
+       * @param {string} password - Password for decrypting PDFs.
+       * @returns {Promise<Array>} - Promise resolving to an array of transaction objects.
+       */
+      async function processFiles(files, password) {
+        const allTransactions = [];
+        // Reset globals for each processing run
+        globalOpeningBalance = null;
+        globalClosingBalance = null;
+        globalEarliestDate = null;
+        globalLatestDate = null;
+        globalMonthBalances = {};
+        // Accumulate information about each statement (PDF file)
+        const fileInfos = [];
+        for (const file of files) {
+          const arrayBuffer = await file.arrayBuffer();
+          const pdf = await pdfjsLib
+            .getDocument({ data: arrayBuffer, password })
+            .promise;
+          const numPages = pdf.numPages;
+          let fileTransactions = [];
+          let fileOpening = null;
+          let fileClosing = null;
+          for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            /*
+             * Reconstruct lines by grouping text items based on their vertical
+             * position (y‑coordinate). Each item has a transform array
+             * [a, b, c, d, e, f] where f is the vertical translation. We
+             * round the y coordinate to group items on the same line.
+             */
+            const linesMap = new Map();
+            textContent.items.forEach((item) => {
+              const y = Math.round(item.transform[5]);
+              if (!linesMap.has(y)) linesMap.set(y, []);
+              // store both text and x coordinate to sort later
+              linesMap.get(y).push({ text: item.str, x: item.transform[4] });
+            });
+            // Sort line keys by descending y (top to bottom)
+            const sortedKeys = Array.from(linesMap.keys()).sort((a, b) => b - a);
+            const lines = sortedKeys.map((key) => {
+              const items = linesMap.get(key);
+              // sort tokens by x coordinate ascending
+              items.sort((a, b) => a.x - b.x);
+              return items.map((it) => it.text).join(' ');
+            });
+            const pageText = lines.join('\n');
+            const pageTransactions = parseTransactions(pageText);
+            // Extract opening and closing balances if present on this page.
+            // Use regex to capture the amount following the labels.
+            const obMatch = /Opening\s+Balance[^\d]*([\d,]+\.\d{2})/i.exec(pageText);
+            const cbMatch = /Closing\s+Balance[^\d]*([\d,]+\.\d{2})/i.exec(pageText);
+            if (obMatch && fileOpening === null) {
+              fileOpening = parseAmount(obMatch[1]);
+            }
+            if (cbMatch && fileClosing === null) {
+              fileClosing = parseAmount(cbMatch[1]);
+            }
+            fileTransactions = fileTransactions.concat(pageTransactions);
+          }
+          // Push transactions for this file
+          allTransactions.push(...fileTransactions);
+          // Parse start and end dates from the filename. The statement file
+          // names typically follow a pattern with dates in the 4th and 5th
+          // underscore‑separated positions, e.g. BOM_Statement_xxxxxxxx2537_20250301_20250331_...
+          let startDate = null;
+          let endDate = null;
+          if (file.name) {
+            const parts = file.name.split('_');
+            if (parts.length >= 5) {
+              const startStr = parts[3];
+              const endStr = parts[4];
+              const parseFileDate = (str) => {
+                if (!str || str.length < 8) return null;
+                const year = str.slice(0, 4);
+                const month = str.slice(4, 6);
+                const day = str.slice(6, 8);
+                const iso = `${year}-${month}-${day}`;
+                const d = new Date(iso);
+                return isNaN(d.getTime()) ? null : d;
+              };
+              startDate = parseFileDate(startStr);
+              endDate = parseFileDate(endStr);
+            }
+          }
+          fileInfos.push({ startDate, endDate, openingBalance: fileOpening, closingBalance: fileClosing });
+        }
+        // After processing all files, determine global opening/closing balances
+        // based on statement headers rather than transaction dates. Sort the
+        // statements by start date and end date to find the earliest and
+        // latest. Also build the per‑month balance map.
+        globalMonthBalances = {};
+        // Filter out fileInfos without valid dates
+        const validFiles = fileInfos.filter(fi => fi.startDate instanceof Date && fi.endDate instanceof Date);
+        if (validFiles.length > 0) {
+          // Find global opening balance: first statement in chronological order that has an opening balance
+          const sortedStart = [...validFiles].sort((a, b) => a.startDate - b.startDate);
+          for (const fi of sortedStart) {
+            if (fi.openingBalance != null) {
+              globalOpeningBalance = fi.openingBalance;
+              break;
+            }
+          }
+          // Find global closing balance: last statement in chronological order that has a closing balance
+          const sortedEnd = [...validFiles].sort((a, b) => b.endDate - a.endDate);
+          for (const fi of sortedEnd) {
+            if (fi.closingBalance != null) {
+              globalClosingBalance = fi.closingBalance;
+              break;
+            }
+          }
+          // Build per‑month opening and closing balances from statements
+          validFiles.forEach((fi) => {
+            // Skip if no balances
+            if (fi.startDate == null || fi.endDate == null) return;
+            // Determine the first day of the start month and last day of the end month
+            let current = new Date(fi.startDate.getFullYear(), fi.startDate.getMonth(), 1);
+            const end = new Date(fi.endDate.getFullYear(), fi.endDate.getMonth(), 1);
+            while (current <= end) {
+              const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+              if (!globalMonthBalances[monthKey]) {
+                globalMonthBalances[monthKey] = {};
+              }
+              // Opening: use statement opening balance if this file's start date
+              // is earlier than any recorded opening date for this month
+              if (fi.openingBalance != null) {
+                if (!globalMonthBalances[monthKey].openingDate || fi.startDate < globalMonthBalances[monthKey].openingDate) {
+                  globalMonthBalances[monthKey].openingDate = fi.startDate;
+                  globalMonthBalances[monthKey].openingBalance = fi.openingBalance;
+                }
+              }
+              // Closing: use statement closing balance if this file's end date
+              // is later than any recorded closing date for this month
+              if (fi.closingBalance != null) {
+                if (!globalMonthBalances[monthKey].closingDate || fi.endDate > globalMonthBalances[monthKey].closingDate) {
+                  globalMonthBalances[monthKey].closingDate = fi.endDate;
+                  globalMonthBalances[monthKey].closingBalance = fi.closingBalance;
+                }
+              }
+              // Move to next month
+              current.setMonth(current.getMonth() + 1);
+            }
+          });
+        }
+        return allTransactions;
+      }
+
+      /**
+       * Parse raw page text into an array of transaction objects. Each
+       * transaction object contains: date (ISO string), vendorString (raw
+       * particulars), debit (number), credit (number), balance (number). Some
+       * statements print amounts with commas (e.g. "1,234.56"). This function
+       * handles such formats.
+       * @param {string} text - Raw text extracted from a PDF page.
+       * @returns {Array} - Array of transaction objects.
+       */
+      function parseTransactions(text) {
+        /**
+         * Parse transactions by splitting the entire page text on date patterns.
+         * Each transaction record spans multiple lines in the PDF. We split
+         * on dates (DD/MM/YYYY or DD/MM/YY) and treat the text between two
+         * dates as one record. For each record we detect the debit/credit
+         * amounts using amount tokens (numbers with decimals), identify
+         * whether the transaction is a credit or debit based on the position
+         * of the hyphen token, and extract the vendor name by searching
+         * through the entire record for known vendor synonyms. If no known
+         * vendor is found, we remove reference numbers from the record and
+         * use the remaining words as the vendor name. Records prior to 2024
+         * are ignored.
+         */
+        const transactions = [];
+        // Split text by date pattern, capturing dates
+        const dateRegex = /(\d{1,2}\/\d{1,2}\/\d{2,4})/g;
+        const parts = text.split(dateRegex);
+        // parts alternates: [preText, date1, record1, date2, record2, ...]
+        for (let i = 1; i < parts.length; i += 2) {
+          const dateStr = parts[i];
+          // The segment preceding this date (parts[i-1]) often contains
+          // vendor information for this transaction. We may use this
+          // later if the record itself lacks a complete vendor name.
+          const preSegment = parts[i - 1] || '';
+          let recordStr = parts[i + 1] || '';
+          // Convert two‑digit years to four digits and normalise the date
+          const dateISO = normaliseDate(dateStr.trim());
+          const yearNum = parseInt(dateISO.slice(0, 4), 10);
+          if (yearNum < 2024) continue;
+          // Flatten whitespace in the record to simplify parsing
+          const record = recordStr.replace(/\s+/g, ' ');
+          const tokens = record.trim().split(/\s+/);
+          // Identify amount tokens: numbers with exactly two decimal places
+          const amountIdxs = [];
+          for (let j = 0; j < tokens.length; j++) {
+            if (/^[\d,]+\.\d{2}$/.test(tokens[j])) {
+              amountIdxs.push(j);
+            }
+          }
+          if (amountIdxs.length < 2) continue; // not a transaction
+          const firstAmountIdx = amountIdxs[0];
+          const secondAmountIdx = amountIdxs[1];
+          const amountVal = parseAmount(tokens[firstAmountIdx]);
+          const balanceVal = parseAmount(tokens[secondAmountIdx]);
+          // Determine if credit or debit based on hyphen location
+          const hyphenIdx = tokens.indexOf('-');
+          if (hyphenIdx === -1) continue;
+          const isCredit = hyphenIdx < firstAmountIdx;
+          const debit = isCredit ? 0 : amountVal;
+          const credit = isCredit ? amountVal : 0;
+          // Extract vendor name by scanning record for known synonyms. Track
+          // whether the name was found via mapping/heuristics. If false,
+          // we'll attempt to extend it with context from the preceding
+          // segment.
+          const recUpper = record.toUpperCase();
+          let vendorName = null;
+          let vendorFoundViaMapping = false;
+          // Search vendorMapping synonyms
+          outer: for (const key in vendorMapping) {
+            const canonical = vendorMapping[key];
+            const syns = key.split(',');
+            for (let sidx = 0; sidx < syns.length; sidx++) {
+              const syn = syns[sidx].trim();
+              if (!syn) continue;
+              const synClean = syn.toUpperCase();
+              if (recUpper.includes(synClean)) {
+                vendorName = canonical;
+                vendorFoundViaMapping = true;
+                break outer;
+              }
+            }
+          }
+          // If no vendor found via mapping, apply special MSEDCL heuristics on record
+          if (!vendorName) {
+            const sRec = recUpper;
+            if (
+              sRec.includes('MSEDCL') ||
+              sRec.includes('MAHARASHTRA STATE ELECTRI') ||
+              sRec.includes('ELECTRICITY DISTRIBUTION') ||
+              sRec.includes('STATE ELECTRICITY DISTR') ||
+              sRec.startsWith('MAHARASHTRA STATE')
+            ) {
+              vendorName = 'Msedcl';
+              vendorFoundViaMapping = true;
+            }
+          }
+          // If still not found and vendor relates to Kasbe
+          if (!vendorName && recUpper.includes('KASBE')) {
+            // If debit exactly 10000 => petty cash else Mofatlal Kasbe
+            const rounded = Math.round(debit * 100) / 100;
+            if (rounded === 10000) {
+              vendorName = 'Petty Cash';
+            } else {
+              vendorName = 'Mofatlal Kasbe';
+            }
+            vendorFoundViaMapping = true;
+          }
+          // Final fallback: build a vendor name by removing obvious reference numbers
+          // and generic tokens (e.g. NEFT/RTGS/UPI/branch codes). This helps avoid
+          // seeing bare numbers like "117280" as vendor names. We strip any token
+          // containing digits and known noise words.
+          let fallbackUsed = false;
+          if (!vendorName) {
+            const recTokens = record.trim().split(/\s+/);
+            const noiseTokens = new Set([
+              'NEFT', 'RTGS', 'UPI', 'CELL', 'SERVICE', 'BRANCH', 'TRANSFER',
+              'PAGE', 'SUB', 'BALEWADI', 'AUNDH', 'BR', 'PR', 'BANK', 'OF', 'DIST', 'COMPANY', '-'
+            ]);
+            const filtered = recTokens.filter((tok) => {
+              const u = tok.toUpperCase();
+              // remove tokens that are purely digits
+              if (/^\d+$/.test(u)) return false;
+              // remove tokens that contain any digits (likely reference codes)
+              if (/\d/.test(u)) return false;
+              // remove noise words
+              if (noiseTokens.has(u)) return false;
+              return true;
+            });
+            const cleaned = filtered.join(' ').trim().replace(/^[-]+\s*/, '').replace(/\s*[-]+$/, '');
+            vendorName = cleaned || 'Unclassified';
+            fallbackUsed = true;
+          }
+          // If we used the fallback and the vendor name appears too short
+          // (e.g., only one or two words), attempt to prepend words from
+          // the preceding segment to reconstruct truncated vendor names.
+          if (fallbackUsed && vendorName) {
+            const words = vendorName.split(/\s+/);
+            if (words.length <= 2) {
+              // Extract tokens from the end of the preceding segment, remove
+              // digits and noise words, then combine with the fallback name.
+              const preTokensRaw = preSegment.trim().split(/\s+/);
+              const noiseTokens2 = new Set([
+                'NEFT', 'RTGS', 'UPI', 'CELL', 'SERVICE', 'BRANCH', 'TRANSFER',
+                'PAGE', 'SUB', 'BALEWADI', 'AUNDH', 'BR', 'PR', 'BANK', 'OF', 'DIST', 'COMPANY', '-'
+              ]);
+              const filteredPre = preTokensRaw.filter((tok) => {
+                const u = tok.toUpperCase();
+                if (/^\d+$/.test(u)) return false;
+                if (/\d/.test(u)) return false;
+                if (noiseTokens2.has(u)) return false;
+                return true;
+              });
+              // Take last few tokens from filteredPre (up to 3 tokens) to form a prefix
+              const prefixTokens = filteredPre.slice(-3);
+              const combined = [...prefixTokens, ...words];
+              // Remove duplicate adjacent tokens
+              const combinedUnique = [];
+              combined.forEach((tok) => {
+                if (combinedUnique.length === 0 || combinedUnique[combinedUnique.length - 1].toUpperCase() !== tok.toUpperCase()) {
+                  combinedUnique.push(tok);
+                }
+              });
+              const combinedName = combinedUnique.join(' ').trim();
+              // Only replace vendorName if combinedName has more words
+              if (combinedName.split(/\s+/).length > words.length) {
+                vendorName = combinedName;
+              }
+            }
+          }
+          transactions.push({
+            date: dateISO,
+            vendorString: vendorName,
+            debit,
+            credit,
+            balance: balanceVal,
+          });
+        }
+        return transactions;
+      }
+
+      /**
+       * Parse amount string with commas into a float. Empty or invalid strings
+       * return 0.
+       * @param {string} str
+       * @returns {number}
+       */
+      function parseAmount(str) {
+        if (!str) return 0;
+        const cleaned = str.replace(/,/g, "");
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+      }
+
+      /**
+       * Normalise date strings into ISO format (YYYY-MM-DD). Accepts
+       * DD/MM/YY or DD/MM/YYYY.
+       * @param {string} d
+       * @returns {string}
+       */
+      function normaliseDate(d) {
+        const parts = d.split("/");
+        let day = parts[0].padStart(2, "0");
+        let month = parts[1].padStart(2, "0");
+        let year = parts[2];
+        if (year.length === 2) {
+          // Interpret two‑digit years as 2000s. Adjust if necessary.
+          year = parseInt(year, 10) < 50 ? "20" + year : "19" + year;
+        }
+        return `${year}-${month}-${day}`;
+      }
+
+      /**
+       * Compute monthly summaries and return structured data for rendering.
+       * @param {Array} transactions - Array of transaction objects.
+       * @returns {object}
+       */
+      function computeSummaries(transactions) {
+        const monthlyVendorDebits = {}; // {month: {vendor: total}}
+        const monthlyDebitTotals = {}; // {month: totalDebit}
+        const monthlyCredits = {}; // {month: {Maintenance Income via Mygate: sum, Other income: sum}}
+        // Track per‑month earliest and latest transactions to derive opening and closing balances for each month
+        const monthlyEarliest = {}; // {month: {date, balance}}
+        const monthlyLatest = {}; // {month: {date, balance}}
+        let openingBalance = null;
+        let closingBalance = null;
+        for (const tx of transactions) {
+          const dateObj = new Date(tx.date);
+          const month = `${dateObj.getFullYear()}-${String(
+            dateObj.getMonth() + 1
+          ).padStart(2, "0")}`;
+          // Determine earliest and latest balances
+          if (openingBalance === null || dateObj < openingBalance.date) {
+            openingBalance = { date: dateObj, balance: tx.balance };
+          }
+          if (closingBalance === null || dateObj > closingBalance.date) {
+            closingBalance = { date: dateObj, balance: tx.balance };
+          }
+          // Track monthly earliest and latest transactions
+          if (!monthlyEarliest[month] || dateObj < monthlyEarliest[month].date) {
+            monthlyEarliest[month] = { date: dateObj, balance: tx.balance };
+          }
+          if (!monthlyLatest[month] || dateObj > monthlyLatest[month].date) {
+            monthlyLatest[month] = { date: dateObj, balance: tx.balance };
+          }
+          // Determine if debit or credit using parsed fields. When both debit
+          // and credit are zero, skip the transaction.
+          const isDebit = tx.debit && tx.debit > 0;
+          const isCredit = tx.credit && tx.credit > 0;
+          if (isCredit) {
+            // Classify credits into maintenance vs other income
+            if (!monthlyCredits[month]) {
+              monthlyCredits[month] = {
+                "Maintenance Income via Mygate": 0,
+                "Other income": 0,
+              };
+            }
+            const upperVendor = tx.vendorString.toUpperCase();
+            const cat = upperVendor.includes("VIVISH TECHNOLOGIES")
+              ? "Maintenance Income via Mygate"
+              : "Other income";
+            monthlyCredits[month][cat] += tx.credit;
+          } else if (isDebit) {
+            const amount = tx.debit;
+            if (!monthlyVendorDebits[month]) monthlyVendorDebits[month] = {};
+            if (!monthlyDebitTotals[month]) monthlyDebitTotals[month] = 0;
+            // Determine canonical vendor name using custom logic
+            const vendor = getCanonicalVendor(tx.vendorString, amount);
+            monthlyVendorDebits[month][vendor] =
+              (monthlyVendorDebits[month][vendor] || 0) + amount;
+            monthlyDebitTotals[month] += amount;
+          }
+        }
+        // Build set of all vendor names across months
+        const vendorSet = new Set();
+        for (const month in monthlyVendorDebits) {
+          for (const v in monthlyVendorDebits[month]) vendorSet.add(v);
+        }
+        let vendors = Array.from(vendorSet);
+
+        // --- Additional grouping based on first two words ---
+        // After the initial vendor mapping and heuristics have been applied,
+        // further consolidate vendors that share the same first two words.
+        // This helps group names like "SUPPLIERS ASHWINI WATER SUPPLIER MAHARASHTRA"
+        // and "SUPPLIERS ASHWINI WATER SUPPLIER TO ASHWINI WATER" together.
+        // We use a case‑insensitive key built from the first two non‑empty
+        // words of each vendor name.
+        const firstTwoMap = {};
+        vendors.forEach((v) => {
+          const words = v.split(/\s+/).filter((w) => w.trim() !== '');
+          const key = words.slice(0, 2).map((w) => w.toUpperCase()).join(' ');
+          if (!firstTwoMap[key]) firstTwoMap[key] = [];
+          firstTwoMap[key].push(v);
+        });
+        // Build new monthlyVendorDebits with grouped vendors
+        const groupedMonthlyVendorDebits = {};
+        const unifiedVendors = [];
+        for (const month of Object.keys(monthlyVendorDebits)) {
+          groupedMonthlyVendorDebits[month] = {};
+        }
+        for (const key in firstTwoMap) {
+          const groupVendors = firstTwoMap[key];
+          // Choose a representative vendor name. Prefer the longest name to retain detail.
+          let canonicalName = groupVendors[0];
+          let maxLen = canonicalName.length;
+          for (let i = 1; i < groupVendors.length; i++) {
+            const candidate = groupVendors[i];
+            if (candidate.length > maxLen) {
+              canonicalName = candidate;
+              maxLen = candidate.length;
+            }
+          }
+          unifiedVendors.push(canonicalName);
+          // Sum amounts across all vendors in this group for each month
+          for (const month of Object.keys(monthlyVendorDebits)) {
+            let sum = 0;
+            groupVendors.forEach((v) => {
+              sum += monthlyVendorDebits[month]?.[v] || 0;
+            });
+            // Only record non‑zero sums to keep table sparse
+            if (sum !== 0) {
+              groupedMonthlyVendorDebits[month][canonicalName] = sum;
+            }
+          }
+        }
+        // Replace the original vendor/debits with grouped ones
+        vendors = unifiedVendors.sort();
+        const monthlyVendorDebitsGrouped = groupedMonthlyVendorDebits;
+        // Sort months chronologically (convert to Date for sorting)
+        const monthSet = new Set([
+          ...Object.keys(monthlyVendorDebitsGrouped),
+          ...Object.keys(monthlyCredits),
+        ]);
+        const months = Array.from(monthSet).sort((a, b) => {
+          const dateA = new Date(a + '-01');
+          const dateB = new Date(b + '-01');
+          return dateA - dateB;
+        });
+        // Compute totals for each vendor across all months using the grouped data.
+        const vendorTotals = {};
+        vendors.forEach((v) => {
+          let sum = 0;
+          months.forEach((m) => {
+            sum += groupedMonthlyVendorDebits[m]?.[v] || 0;
+          });
+          vendorTotals[v] = sum;
+        });
+        // Compute per‑month opening and closing balances. Prefer the values
+        // extracted from the statement headers (globalMonthBalances) if
+        // available; otherwise fall back to the earliest and latest
+        // transaction balances within the month.
+        const monthlyOpeningBalance = {};
+        const monthlyClosingBalance = {};
+        months.forEach((m) => {
+          if (globalMonthBalances[m] && globalMonthBalances[m].openingBalance != null) {
+            monthlyOpeningBalance[m] = globalMonthBalances[m].openingBalance;
+          } else {
+            monthlyOpeningBalance[m] = monthlyEarliest[m] ? monthlyEarliest[m].balance : null;
+          }
+          if (globalMonthBalances[m] && globalMonthBalances[m].closingBalance != null) {
+            monthlyClosingBalance[m] = globalMonthBalances[m].closingBalance;
+          } else {
+            monthlyClosingBalance[m] = monthlyLatest[m] ? monthlyLatest[m].balance : null;
+          }
+        });
+        return {
+          months,
+          vendors,
+          // Use the grouped vendor debits in the final summary so that
+          // vendors sharing the same first two words appear together.
+          monthlyVendorDebits: groupedMonthlyVendorDebits,
+          monthlyDebitTotals,
+          monthlyCredits,
+          vendorTotals,
+          monthlyOpeningBalance,
+          monthlyClosingBalance,
+          // Opening and closing balances for the entire period: use the
+          // values extracted from the statements (globalOpeningBalance and
+          // globalClosingBalance) if available; otherwise fall back to the
+          // earliest and latest transaction balances.
+          openingBalance:
+            globalOpeningBalance !== null
+              ? globalOpeningBalance
+              : openingBalance
+              ? openingBalance.balance
+              : null,
+          closingBalance:
+            globalClosingBalance !== null
+              ? globalClosingBalance
+              : closingBalance
+              ? closingBalance.balance
+              : null,
+        };
+      }
+
+      /**
+       * Determine canonical vendor name for a raw vendor string and debit amount.
+       * Implements custom rules:
+       *  - If vendor text contains "MSEDCL" or "MAHARASHTRA STATE ELECTRI", map
+       *    to "Msedcl".
+       *  - If vendor contains "KASBE" (e.g., M KASBE, Mafatlal Kasabe), then:
+       *      * If debit is exactly 10000, map to "Petty Cash".
+       *      * Otherwise, map to "Mofatlal Kasbe".
+       *  - Otherwise, match against vendorMapping keys (case‑insensitive). If
+       *    any mapping key appears in the vendor string, return its canonical
+       *    value.
+       *  - If no mapping is found, return the original vendor string trimmed.
+       * @param {string} vendorString - Raw vendor text from the statement.
+       * @param {number} amount - Debit amount associated with this transaction.
+       * @returns {string}
+       */
+      function getCanonicalVendor(vendorString, amount) {
+        // Clean the vendor string by removing long numeric or alphanumeric
+        // reference numbers that appear at the end of NEFT/UPI descriptions. We
+        // do this before attempting any matching so that tokens like "118280"
+        // or "MAHBN62025120833758982" don't cause unique vendor entries.
+        // Clean the vendor string by removing digits, reference numbers and noise words.
+        const tokensRaw = (vendorString || '').split(/\s+/);
+        const noiseTokens = new Set(['NEFT','RTGS','UPI','CELL','SERVICE','BRANCH','TRANSFER','PAGE','SUB','BALEWADI','AUNDH','BR','PR','BANK','OF','DIST','COMPANY','-']);
+        const filteredTokens = tokensRaw.filter((tok) => {
+          const u = tok.toUpperCase();
+          if (/^\d+$/.test(u)) return false;
+          if (/\d/.test(u)) return false;
+          if (noiseTokens.has(u)) return false;
+          return true;
+        });
+        let cleanedVendor = filteredTokens.join(' ').trim();
+        cleanedVendor = cleanedVendor.replace(/^[-]+\s*/, '').replace(/\s*[-]+$/, '');
+        if (!cleanedVendor) {
+          return 'Unclassified';
+        }
+        const s = cleanedVendor.toUpperCase();
+        // If vendor name contains 'Manohar Sutar', treat it as its own vendor
+        if (s.includes('MANOHAR SUTAR')) {
+          return 'Manohar Sutar';
+        }
+        // Consolidate MSEDCL variations. Some statements include long names like
+        // "MAHARASHTRA STATE ELECTRICITY DISTRIBUTION" or abbreviations like
+        // "MSEDCL". If any of these substrings appear, map to "Msedcl".
+        if (
+          s.includes("MSEDCL") ||
+          s.includes("MAHARASHTRA STATE ELECTRI") ||
+          s.includes("ELECTRICITY DISTRIBUTION") ||
+          s.includes("STATE ELECTRICITY DISTR") ||
+          s.startsWith("MAHARASHTRA STATE")
+        ) {
+          return "Msedcl";
+        }
+        // Consolidate Kasbe variants with amount logic. Any vendor name
+        // containing "KASBE" is treated as a Kasbe entry. If the debit
+        // amount equals exactly 10,000 (two decimal precision), classify as
+        // petty cash; otherwise group under "Mofatlal Kasbe".
+        if (s.includes('KASBE') || s.includes('KASABE')) {
+          const rounded = Math.round(amount * 100) / 100;
+          if (rounded === 10000) {
+            return "Petty Cash";
+          }
+          return "Mofatlal Kasbe";
+        }
+        // Iterate through the vendorMapping keys. Keys may contain comma‑separated
+        // synonyms; split them and check each synonym against the vendor text.
+        for (const key in vendorMapping) {
+          const canonical = vendorMapping[key];
+          // Split on commas to handle multiple aliases in a single key
+          const synonyms = key.split(",");
+          for (let i = 0; i < synonyms.length; i++) {
+            const syn = synonyms[i].trim();
+            if (!syn) continue;
+            // Use uppercase for comparison and ignore extra spaces within the
+            // synonym by collapsing multiple spaces to a single space. This
+            // helps match phrases like "STATE ELECTRI" inside longer strings.
+            const cleanedSyn = syn.toUpperCase().replace(/\s+/g, " ");
+            if (cleanedSyn && s.includes(cleanedSyn)) {
+              return canonical;
+            }
+          }
+        }
+        // Default: return trimmed vendorString. Fallback to "Unknown Vendor"
+        // if the string is empty after trimming.
+        const trimmed = vendorString ? vendorString.trim() : "";
+        return trimmed || "Unknown Vendor";
+      }
+
+      /**
+       * Render the computed summaries into HTML tables and attach to the DOM.
+       * @param {object} summary
+       */
+      function renderResults(summary) {
+        resultsContainer.innerHTML = "";
+        // Opening and closing balances
+        const balDiv = document.createElement("div");
+        balDiv.innerHTML = `<p><strong>Opening Balance:</strong> ₹${formatAmount(
+          summary.openingBalance
+        )}</p><p><strong>Closing Balance:</strong> ₹${formatAmount(
+          summary.closingBalance
+        )}</p>`;
+        resultsContainer.appendChild(balDiv);
+        // Insert header above the debit table
+        const debitHeader = document.createElement("h2");
+        debitHeader.textContent = "Month on Month Debit analysis";
+        debitHeader.style.color = "#34495e";
+        debitHeader.style.marginTop = "20px";
+        debitHeader.style.marginBottom = "10px";
+        resultsContainer.appendChild(debitHeader);
+        // Vendor vs Month table. Use a vertically scrollable container for
+        // the vendor summary since there may be many vendors. We also
+        // create a download button to allow exporting the vendor table to
+        // an Excel file. The button is enabled only after a summary is
+        // generated.
+        const vendorTableDiv = document.createElement("div");
+        vendorTableDiv.classList.add("vendor-table-container");
+        vendorTableDiv.innerHTML = generateVendorTable(summary);
+        resultsContainer.appendChild(vendorTableDiv);
+        // Create or update the download button
+        let downloadBtn = document.getElementById("download-btn");
+        if (!downloadBtn) {
+          downloadBtn = document.createElement("button");
+          downloadBtn.id = "download-btn";
+          downloadBtn.textContent = "Download Debit Table (Excel)";
+          downloadBtn.style.marginTop = "10px";
+          downloadBtn.style.padding = "6px 12px";
+          downloadBtn.style.background = "#28a745";
+          downloadBtn.style.color = "#fff";
+          downloadBtn.style.border = "none";
+          downloadBtn.style.borderRadius = "4px";
+          downloadBtn.style.cursor = "pointer";
+          downloadBtn.addEventListener("click", () => {
+            if (currentSummary) {
+              exportVendorToExcel(currentSummary);
+            }
+          });
+          resultsContainer.appendChild(downloadBtn);
+        }
+        // Store the current summary globally so that the download function
+        // can access it. Without this, the button's event handler would
+        // not know which data to export.
+        currentSummary = summary;
+        // Insert header above the credit table
+        const creditHeader = document.createElement("h2");
+        creditHeader.textContent = "Month on Month Credit analysis";
+        creditHeader.style.color = "#16a085";
+        creditHeader.style.marginTop = "30px";
+        creditHeader.style.marginBottom = "10px";
+        resultsContainer.appendChild(creditHeader);
+        // Monthly credit table
+        const creditTable = document.createElement("div");
+        creditTable.classList.add("table-container");
+        creditTable.innerHTML = generateCreditTable(summary);
+        resultsContainer.appendChild(creditTable);
+        // Insert header above the opening/closing balance table
+        const sumHeader = document.createElement("h2");
+        sumHeader.textContent = "Opening/Closing balance of Bank account";
+        sumHeader.style.color = "#8e44ad";
+        sumHeader.style.marginTop = "30px";
+        sumHeader.style.marginBottom = "10px";
+        resultsContainer.appendChild(sumHeader);
+        // Sum of all debits and balances table
+        const sumTable = document.createElement("div");
+        sumTable.classList.add("table-container");
+        sumTable.innerHTML = generateSumTable(summary);
+        resultsContainer.appendChild(sumTable);
+
+        // Insert header above the debit trend chart
+        const trendHeader = document.createElement("h2");
+        trendHeader.textContent = "Debit Trend (Month on Month)";
+        trendHeader.style.color = "#e74c3c";
+        trendHeader.style.marginTop = "30px";
+        trendHeader.style.marginBottom = "10px";
+        resultsContainer.appendChild(trendHeader);
+        // Insert a container for the line chart displaying total monthly debits.
+        const chartContainer = document.createElement("div");
+        chartContainer.classList.add("chart-container");
+        chartContainer.innerHTML = '<canvas id="debitChart" width="800" height="300"></canvas>';
+        resultsContainer.appendChild(chartContainer);
+        // Render the chart after inserting it into the DOM
+        renderDebitChart(summary);
+      }
+
+      /**
+       * Generate HTML for the vendor vs month table. Vendors appear in
+       * the first column and months appear as header columns. A "Total"
+       * column on the right shows the sum of all debits for that vendor
+       * across the period. Row totals are computed from monthlyVendorDebits.
+       * @param {object} summary
+       * @returns {string}
+       */
+      function generateVendorTable(summary) {
+        const {
+          months,
+          vendors,
+          monthlyVendorDebits,
+          vendorTotals,
+          monthlyDebitTotals,
+        } = summary;
+        let html = '<table class="debit-table"><thead><tr><th>Vendor</th>';
+        months.forEach((month) => {
+          html += `<th>${month}</th>`;
+        });
+        html += '<th>Total</th></tr></thead><tbody>';
+        vendors.forEach((vendor) => {
+          html += `<tr><td>${vendor}</td>`;
+          months.forEach((month) => {
+            const amount = monthlyVendorDebits[month]?.[vendor] || 0;
+          html += `<td>₹${formatIntegerAmount(amount)}</td>`;
+          });
+          const total = vendorTotals[vendor] || 0;
+          html += `<td><strong>₹${formatIntegerAmount(total)}</strong></td></tr>`;
+        });
+        // Close the body and append a totals row in a dedicated <tfoot> so
+        // that the totals remain sticky at the bottom of the vendor table.
+        html += '</tbody><tfoot><tr><td><strong>Total</strong></td>';
+        let grandTotal = 0;
+        months.forEach((month) => {
+          const mtotal = monthlyDebitTotals[month] || 0;
+          grandTotal += mtotal;
+          html += `<td><strong>₹${formatIntegerAmount(mtotal)}</strong></td>`;
+        });
+        html += `<td><strong>₹${formatIntegerAmount(grandTotal)}</strong></td></tr></tfoot></table>`;
+        return html;
+      }
+
+      /**
+       * Generate HTML for the monthly credit summary table.
+       * @param {object} summary
+       * @returns {string}
+       */
+      function generateCreditTable(summary) {
+        const { months, monthlyCredits } = summary;
+        // Define credit categories with updated names
+        const categories = ["Maintenance Income via Mygate", "Other income"];
+        let html = '<table class="credit-table"><thead><tr><th>Month</th>';
+        categories.forEach((cat) => {
+          html += `<th>${cat}</th>`;
+        });
+        html += '<th>Total</th></tr></thead><tbody>';
+        months.forEach((month) => {
+          html += `<tr><td>${month}</td>`;
+          const creditObj = monthlyCredits[month] || {};
+          let rowTotal = 0;
+          categories.forEach((cat) => {
+            const val = creditObj[cat] || 0;
+            rowTotal += val;
+            html += `<td>₹${formatIntegerAmount(val)}</td>`;
+          });
+          html += `<td><strong>₹${formatIntegerAmount(rowTotal)}</strong></td></tr>`;
+        });
+        // Add a totals row summarising each category across all months
+        html += '<tr><td><strong>Total</strong></td>';
+        categories.forEach((cat) => {
+          let colTotal = 0;
+          months.forEach((month) => {
+            colTotal += (monthlyCredits[month]?.[cat] || 0);
+          });
+          html += `<td><strong>₹${formatIntegerAmount(colTotal)}</strong></td>`;
+        });
+        // Grand total of all credits
+        let creditGrandTotal = 0;
+        months.forEach((month) => {
+          const obj = monthlyCredits[month] || {};
+          creditGrandTotal += (obj[categories[0]] || 0) + (obj[categories[1]] || 0);
+        });
+        html += `<td><strong>₹${formatIntegerAmount(creditGrandTotal)}</strong></td></tr>`;
+        html += '</tbody></table>';
+        return html;
+      }
+
+      /**
+       * Generate HTML for the table showing the sum of all debits per month.
+       * @param {object} summary
+       * @returns {string}
+       */
+      function generateSumTable(summary) {
+        const {
+          months,
+          monthlyDebitTotals,
+          monthlyOpeningBalance,
+          monthlyClosingBalance,
+        } = summary;
+        let html = '<table class="sum-table"><thead><tr><th>Month</th><th>Opening Balance</th><th>Closing Balance</th><th>Sum of Debits</th></tr></thead><tbody>';
+        months.forEach((month) => {
+          const total = monthlyDebitTotals[month] || 0;
+          const ob = monthlyOpeningBalance[month] != null ? monthlyOpeningBalance[month] : 0;
+          const cb = monthlyClosingBalance[month] != null ? monthlyClosingBalance[month] : 0;
+          html += `<tr><td>${month}</td><td>₹${formatAmount(ob)}</td><td>₹${formatAmount(cb)}</td><td>₹${formatAmount(total)}</td></tr>`;
+        });
+        // Add a totals row at the bottom summarising the totals across all months
+        let totalDebitSum = 0;
+        let totalOpening = 0;
+        let totalClosing = 0;
+        months.forEach((m) => {
+          totalDebitSum += monthlyDebitTotals[m] || 0;
+          totalOpening += monthlyOpeningBalance[m] || 0;
+          totalClosing += monthlyClosingBalance[m] || 0;
+        });
+        html += `<tr><td><strong>Total</strong></td><td><strong>₹${formatAmount(totalOpening)}</strong></td><td><strong>₹${formatAmount(totalClosing)}</strong></td><td><strong>₹${formatAmount(totalDebitSum)}</strong></td></tr>`;
+        html += '</tbody></table>';
+        return html;
+      }
+
+      /**
+       * Format a numeric amount with commas and two decimal places. If input is
+       * null or undefined, return '0.00'.
+       * @param {number} num
+       * @returns {string}
+       */
+      function formatAmount(num) {
+        if (!num || isNaN(num)) return '0.00';
+        return num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      /**
+       * Format a numeric amount with commas and no decimal places. Useful
+       * for the debit and credit tables where only whole numbers are
+       * desired. If input is null or undefined, return '0'.
+       * @param {number} num
+       * @returns {string}
+       */
+      function formatIntegerAmount(num) {
+        if (!num || isNaN(num)) return '0';
+        return Math.round(num).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+      }
+
+      /**
+       * Export the vendor vs month debit table to an Excel file. This
+       * function builds a two‑dimensional array representing the table
+       * contents and uses the SheetJS library to generate and download
+       * an .xlsx file. The exported file includes a header row with
+       * months and a total column, and a row for each vendor with their
+       * monthly amounts and overall total.
+       * @param {object} summary - Summary object containing vendors, months,
+       * monthlyVendorDebits, and vendorTotals.
+       */
+      function exportVendorToExcel(summary) {
+        if (!summary) return;
+        const { vendors, months, monthlyVendorDebits, vendorTotals } = summary;
+        // Build the header row: first cell is "Vendor", followed by months and "Total".
+        const header = ['Vendor', ...months, 'Total'];
+        const data = [header];
+        vendors.forEach((vendor) => {
+          const row = [vendor];
+          months.forEach((month) => {
+            const val = monthlyVendorDebits[month]?.[vendor] || 0;
+            row.push(val);
+          });
+          row.push(vendorTotals[vendor] || 0);
+          data.push(row);
+        });
+        // Create worksheet and workbook
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Debit Summary');
+        // Format numbers in INR style within the worksheet. Loop through cells
+        // excluding header row. Use a custom format string (#,##0.00).
+        const range = XLSX.utils.decode_range(worksheet['!ref']);
+        for (let R = 1; R <= range.e.r; ++R) {
+          for (let C = 1; C <= range.e.c; ++C) {
+            const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = worksheet[cellRef];
+            if (cell && typeof cell.v === 'number') {
+              cell.t = 'n';
+              cell.z = '#,##0.00';
+            }
+          }
+        }
+        // Write and trigger download
+        XLSX.writeFile(workbook, 'Debit_Table.xlsx');
+      }
+
+      /**
+       * Render a line chart displaying the total monthly debits. Uses Chart.js.
+       * Destroys any existing chart instance to avoid duplication when
+       * reprocessing new statements. Rounds the totals to the nearest
+       * integer for clarity. Labels on the y-axis are formatted in INR.
+       * @param {object} summary
+       */
+      function renderDebitChart(summary) {
+        const canvas = document.getElementById('debitChart');
+        if (!canvas || !summary) return;
+        const ctx = canvas.getContext('2d');
+        const labels = summary.months;
+        const data = labels.map((m) => {
+          const val = summary.monthlyDebitTotals[m] || 0;
+          return Math.round(val);
+        });
+        // Destroy previous chart if exists
+        if (window.debitChartInstance) {
+          window.debitChartInstance.destroy();
+        }
+        window.debitChartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Total Monthly Debit',
+                data: data,
+                borderColor: '#e74c3c',
+                backgroundColor: 'rgba(231, 76, 60, 0.15)',
+                tension: 0.3,
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#e74c3c',
+                pointBorderColor: '#e74c3c',
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                ticks: {
+                  color: '#34495e',
+                  font: { weight: 'bold' },
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                },
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: '#e74c3c',
+                  font: { weight: 'bold' },
+                  callback: function (value) {
+                    return '₹' + value.toLocaleString('en-IN');
+                  },
+                },
+                grid: {
+                  color: 'rgba(231, 76, 60, 0.1)',
+                },
+              },
+            },
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  color: '#e74c3c',
+                  font: { weight: 'bold' },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    const v = context.parsed.y;
+                    return '₹' + v.toLocaleString('en-IN');
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+
+      /**
+       * Process PDF statements stored in the `statements` folder of the
+       * current site. Uses the GitHub REST API to list files in the
+       * `statements` directory of the repository hosting this page, then
+       * fetches each PDF via a relative path (e.g. `statements/<file>.pdf`).
+       * The password provided by the user is used to decrypt the PDFs.
+       * When complete, it invokes processFiles() with the fetched File
+       * objects and renders the results using the same summary logic
+       * as uploaded statements.
+       *
+       * @param {string} password - Password for decrypting PDFs.
+       */
+      async function processHistorical(password) {
+        // Derive repository owner and name from the current URL. The page
+        // may be served from `https://<user>.github.io/<repo>/` for a project
+        // site, or from `https://<user>.github.io/` for a user/organisation
+        // site. We parse the hostname and pathname to extract both
+        // components. If the pathname is empty (user site), we assume
+        // the repository is `<user>.github.io`.
+        const host = window.location.hostname; // e.g. username.github.io
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const username = host.split('.')[0];
+        let repo = '';
+        if (pathParts.length > 0) {
+          repo = pathParts[0];
+        } else {
+          // User site; repository name equals username.github.io
+          repo = `${username}.github.io`;
+        }
+        // Use GitHub REST API to list contents of the `statements` folder
+        const apiUrl = `https://api.github.com/repos/${username}/${repo}/contents/statements`;
+        let fileList;
+        try {
+          const res = await fetch(apiUrl);
+          if (!res.ok) {
+            throw new Error(`GitHub API request failed with status ${res.status}`);
+          }
+          fileList = await res.json();
+        } catch (err) {
+          throw new Error(`Unable to list statements from GitHub: ${err.message}`);
+        }
+        // Filter out PDF files (case‑insensitive). The API returns an array
+        // of objects with properties like `name`, `path`, and `download_url`.
+        const pdfEntries = Array.isArray(fileList)
+          ? fileList.filter((item) =>
+              item.type === 'file' && item.name.toLowerCase().endsWith('.pdf')
+            )
+          : [];
+        if (pdfEntries.length === 0) {
+          throw new Error('No PDF statements found in the statements folder.');
+        }
+        // Fetch each PDF via a relative path (same origin as the site). We
+        // construct the URL as `statements/<fileName>`. This will work
+        // provided the PDFs are stored in the `statements` directory of
+        // the GitHub Pages site. Convert each fetched ArrayBuffer into a
+        // File object so that processFiles() can consume it.
+        const files = [];
+        for (const entry of pdfEntries) {
+          const url = `statements/${entry.name}`;
+          try {
+            const resp = await fetch(url);
+            if (!resp.ok) {
+              console.warn(`Failed to fetch ${url}: ${resp.status}`);
+              continue;
+            }
+            const buf = await resp.arrayBuffer();
+            const file = new File([buf], entry.name, {
+              type: 'application/pdf',
+            });
+            files.push(file);
+          } catch (err) {
+            console.warn(`Error fetching ${url}: ${err}`);
+          }
+        }
+        if (files.length === 0) {
+          throw new Error('Unable to load any statements from the statements folder.');
+        }
+        // Reset global balances before processing new data
+        globalOpeningBalance = null;
+        globalClosingBalance = null;
+        globalEarliestDate = null;
+        globalLatestDate = null;
+        // Process files and render results
+        const transactions = await processFiles(files, password);
+        // If no transactions extracted, bail
+        if (!transactions || !transactions.length) {
+          throw new Error('No transactions could be extracted from the historical statements.');
+        }
+        transactions.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const summary = computeSummaries(transactions);
+        renderResults(summary);
+      }
+    </script>
+  </body>
+</html>
